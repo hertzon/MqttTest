@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_con2"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="com.tronstudios.mqtttest.Con2">
+
+    <TextView
+        android:text="2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="5dp"
+        android:id="@+id/textView3" />
+
+
+
+    <ScrollView
+        android:id="@+id/scroll"
+        android:layout_width="match_parent"
+        android:layout_below="@+id/textView3"
+        android:layout_height="300dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:id="@+id/lin"
+            android:orientation="vertical">
+            <TextView
+                android:text='Conectese a la red WIFI  "SensorMovimiento"'
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/textView3"
+                android:layout_centerHorizontal="true"
+
+                android:id="@+id/textView4" />
+            <ImageView
+                android:id="@+id/imageView1"
+                android:layout_width="wrap_content"
+                android:src="@drawable/p1"
+                android:layout_height="100dp" />
+
+            <ImageView
+                android:id="@+id/imageView2"
+                android:src="@drawable/p6"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_gravity="center_horizontal" />
+            <ImageView
+                android:id="@+id/imageView3"
+                android:src="@drawable/p2"
+                android:layout_width="wrap_content"
+                android:layout_height="100dp"
+                android:layout_gravity="center_horizontal" />
+            <ImageView
+                android:id="@+id/imageView4"
+                android:src="@drawable/p6"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_gravity="center_horizontal" />
+            <ImageView
+                android:id="@+id/imageView5"
+                android:src="@drawable/p3"
+                android:layout_width="wrap_content"
+                android:layout_height="100dp"
+                android:layout_gravity="center_horizontal" />
+            <ImageView
+                android:id="@+id/imageView6"
+                android:src="@drawable/p6"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_gravity="center_horizontal" />
+            <ImageView
+                android:id="@+id/imageView7"
+                android:src="@drawable/p4"
+                android:layout_width="wrap_content"
+                android:layout_height="100dp"
+                android:layout_gravity="center_horizontal" />
+
+
+
+            <ImageView
+                android:id="@+id/imageView8"
+                android:src="@drawable/p6"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_gravity="center_horizontal" />
+
+
+
+            <ImageView
+                android:id="@+id/imageView9"
+                android:src="@drawable/p5"
+                android:layout_width="wrap_content"
+                android:layout_height="100dp"
+                android:layout_gravity="center_horizontal" />
+            <ImageView
+                android:id="@+id/imageView10"
+                android:src="@drawable/p6"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_gravity="center_horizontal" />
+
+
+        </LinearLayout>
+
+
+
+
+
+    </ScrollView>
+    <Button
+        android:text="Button"
+        android:layout_alignParentBottom="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button" />
+
+
+</RelativeLayout>
