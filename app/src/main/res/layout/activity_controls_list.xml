@@ -13,9 +13,10 @@
     <ListView
         android:id="@+id/lv_controls"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="500dp"
         android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        tools:context=".com.tronstudios.mqtttest.ControlsList" />
+        android:layout_centerVertical="false"
+        tools:context=".com.tronstudios.mqtttest.ControlsList"
+        android:minHeight="191dp" />
 
 </RelativeLayout>
