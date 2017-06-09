@@ -1,5 +1,7 @@
 package com.tronstudios.mqtttest;
 
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -25,34 +27,92 @@ import org.json.JSONObject;
 
 import java.io.SyncFailedException;
 import java.io.UnsupportedEncodingException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 
 public class ControlsList extends AppCompatActivity {
-    String[] countries = new String[] {
-            "Sala",
-            "Comedor"
-    };
-    public boolean[] status = {
-            true,
-            false
-    };
+//    String[] lugares = new String[] {
+//            "Sala",
+//            "Comedor"
+//    };
+//    public boolean[] status = {
+//            true,
+//            false
+//    };
+    String[] lugares;
+    Boolean[] status;
+
+
     String TAG="mqtt";
     ListView controlslv;
     ImageView imageViewRssi;
     MqttAndroidClient client;
     int secuencia;
+    SQLiteDatabase myDB;
+    Cursor c;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_controls_list);
         if(savedInstanceState!=null){
-            status = savedInstanceState.getBooleanArray("status");
+            //status = savedInstanceState.getBooleanArray("status");
         }
         controlslv= (ListView) findViewById(R.id.lv_controls);
         imageViewRssi=(ImageView)findViewById(R.id.imageViewRssi);
+
+        Log.d(TAG,"Creando DB y tabla");
+        String datetime= new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime());
+        Log.d(TAG,"Datetime: "+datetime);
+        myDB = openOrCreateDatabase("controlesDB", MODE_PRIVATE, null);
+        //myDB.execSQL("DROP TABLE IF EXISTS controles");//borramos tabla
+        myDB.execSQL("CREATE TABLE IF NOT EXISTS "
+                + "controles"
+                + " (id INTEGER PRIMARY KEY AUTOINCREMENT, serial TEXT, activo BOOLEAN, fechacreado TEXT, lugar TEXT, server TEXT, port INTEGER);");
+//        myDB.execSQL("INSERT INTO "
+//                + "controles"
+//                + " (serial, activo, fechacreado, lugar, server, port)"
+//                + " VALUES ("+"'"+ "TRA000004X"+"'" +", '"+true+"'"+ ", "+"'"+datetime+"'"+", "+"'"+"cuarto hija"+"'"+", "+"'"+"138.197.20.62"+"'"+", "+"'"+1883+"'"+");");
+
+        Log.d(TAG,"Reading DB...");
+        c = myDB.rawQuery("SELECT * FROM controles", null);
+        c.moveToFirst();
+        if (c.getCount()>0){
+            Log.d(TAG,"Populate array");
+        }
+        lugares=new String[c.getCount()];
+        status=new Boolean[c.getCount()];
+        int i=0;
+        if (c != null && c.getCount()>0) {
+            do {
+                int id=c.getInt(c.getColumnIndex("id"));
+                String serial=c.getString(c.getColumnIndex("serial"));
+                int activo=(c.getColumnIndex("activo"));
+                if (activo==1){
+                    status[i]=true;
+                }else if (activo==1){
+                    status[i]=false;
+                }
+                String fechacreado=c.getString(c.getColumnIndex("fechacreado"));
+                String lugar=c.getString(c.getColumnIndex("lugar"));
+
+                lugares[i]=lugar;
+
+
+                Log.d(TAG,"id: "+id+" \t "+serial+" \t "+activo+" \t "+fechacreado+" \t "+lugar);
+                i++;
+
+            }while(c.moveToNext());
+        }
+
+
+
+
+
+        myDB.close();
 
         final String clientId = MqttClient.generateClientId();//138.197.20.62
         client =new MqttAndroidClient(this.getApplicationContext(), "tcp://138.197.20.62:1883",clientId);
@@ -90,10 +150,10 @@ public class ControlsList extends AppCompatActivity {
                     payload=new String(message.getPayload());
                     //Log.d(TAG,"on messageArrived: "+payload);
                     JSONObject jsonObject = new JSONObject(payload);
-                    Log.d(TAG,jsonObject.toString());
-                    Log.d(TAG,"id: "+jsonObject.getString("id"));
-                    Log.d(TAG,"state: "+jsonObject.getString("state"));
-                    Log.d(TAG,"rssi: "+jsonObject.getInt("rssi"));
+                    //Log.d(TAG,jsonObject.toString());
+                    //Log.d(TAG,"id: "+jsonObject.getString("id"));
+                    //Log.d(TAG,"state: "+jsonObject.getString("state"));
+                    //Log.d(TAG,"rssi: "+jsonObject.getInt("rssi"));
                     int RSSI=jsonObject.getInt("rssi");
                     //Log.d(TAG,"RSSI: "+RSSI);
                     int quality=jsonObject.getInt("quality");
@@ -108,34 +168,6 @@ public class ControlsList extends AppCompatActivity {
                     }else if (quality>10){
                         imageView.setImageResource(R.drawable.wifi1);
                     }
-//                    if (RSSI > -55) {
-//                        Log.d(TAG,"1");
-//                        imageView.setImageResource(R.drawable.wifi4);
-//
-//                        //bars = 5;
-//                    } else if (RSSI < -55 && RSSI > -65) {
-//                        Log.d(TAG,"2");
-//                        imageView.setImageResource(R.drawable.wifi3);
-//
-//                       // bars = 4;
-//                    } else if (RSSI < -65 && RSSI > -70) {
-//                        Log.d(TAG,"3");
-//                        imageView.setImageResource(R.drawable.wifi2);
-//
-//                        //bars = 3;
-//                    } else if (RSSI < -70 && RSSI > -78) {
-//                        Log.d(TAG,"4");
-//                        imageView.setImageResource(R.drawable.wifi2);
-//
-//                        //bars = 2;
-//                    } else if (RSSI < -78 && RSSI > -82) {
-//                        Log.d(TAG,"5");
-//                        imageView.setImageResource(R.drawable.wifi1);
-//
-//                        //bars = 1;
-//                    } else {
-//                        //bars = 0;
-//                    }
 
 
                 }
@@ -153,11 +185,11 @@ public class ControlsList extends AppCompatActivity {
         }
 
 
-        // Each row in the list stores country name and its status
+        // Each row in the list stores lugares name and its status
         List<HashMap<String,Object>> aList = new ArrayList<HashMap<String,Object>>();
-        for(int i=0;i<countries.length;i++){
+        for(i=0;i<lugares.length;i++){
             HashMap<String, Object> hm = new HashMap<String,Object>();
-            hm.put("txt", countries[i]);
+            hm.put("txt", lugares[i]);
             hm.put("stat",status[i]);
             aList.add(hm);
         }
@@ -171,6 +203,7 @@ public class ControlsList extends AppCompatActivity {
         controlslv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> lv, View view, int i, long l) {
+                Log.d(TAG,"pulsado: "+i);
                 ListView lView = (ListView) lv;
                 SimpleAdapter adapter = (SimpleAdapter) lView.getAdapter();
                 HashMap<String,Object> hm = (HashMap) adapter.getItem(i);
