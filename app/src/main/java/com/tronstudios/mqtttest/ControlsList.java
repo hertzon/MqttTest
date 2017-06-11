@@ -7,11 +7,13 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.SimpleAdapter;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
@@ -24,6 +26,7 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.io.SyncFailedException;
 import java.io.UnsupportedEncodingException;
@@ -53,6 +56,7 @@ public class ControlsList extends AppCompatActivity {
     int secuencia;
     SQLiteDatabase myDB;
     Cursor c;
+    Button btn_salir;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +67,14 @@ public class ControlsList extends AppCompatActivity {
         }
         controlslv= (ListView) findViewById(R.id.lv_controls);
         imageViewRssi=(ImageView)findViewById(R.id.imageViewRssi);
+        btn_salir=(Button)findViewById(R.id.button_salir);
+        btn_salir.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
+                System.exit(0);
+            }
+        });
 
         Log.d(TAG,"Creando DB y tabla");
         String datetime= new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime());
@@ -123,9 +135,35 @@ public class ControlsList extends AppCompatActivity {
                 @Override
                 public void onSuccess(IMqttToken asyncActionToken) {
                     // We are connected
+                    Log.d(TAG, "onSuccess: "+"We are connected");
+                    Log.d(TAG,"Subscribiendo controles....");
+                    myDB = openOrCreateDatabase("controlesDB", MODE_PRIVATE, null);
+                    c = myDB.rawQuery("SELECT * FROM controles", null);
+                    Log.d(TAG,"Encontrados: "+c.getCount()+" controles...");
+                    c.moveToFirst();
+                    if (c != null && c.getCount()>0) {
+                        do {
+                            String serial=c.getString(c.getColumnIndex("serial"));
+                            Log.d(TAG,"Subsribiendo control: "+serial);
+                            setSubscription(serial);
+                        }while(c.moveToNext());
 
-                    Log.d(TAG, "onSuccess");
-                    setSubscription();
+
+                    }
+
+
+
+
+
+
+
+
+
+
+
+                    myDB.close();
+
+                    //setSubscription();
                 }
 
                 @Override
@@ -146,19 +184,47 @@ public class ControlsList extends AppCompatActivity {
 
                 @Override
                 public void messageArrived(String topic, MqttMessage message) throws Exception {
+                    Log.d(TAG,"Llego topic de: "+topic);
                     String payload;
+                    String id=null;
+                    int ncontroles=0;
                     payload=new String(message.getPayload());
                     //Log.d(TAG,"on messageArrived: "+payload);
                     JSONObject jsonObject = new JSONObject(payload);
+                    id=jsonObject.getString("id");
+                    Log.d(TAG,"id: "+id);
                     //Log.d(TAG,jsonObject.toString());
                     //Log.d(TAG,"id: "+jsonObject.getString("id"));
                     //Log.d(TAG,"state: "+jsonObject.getString("state"));
                     //Log.d(TAG,"rssi: "+jsonObject.getInt("rssi"));
-                    int RSSI=jsonObject.getInt("rssi");
+                    ncontroles=controlslv.getCount();
+                    //Log.d(TAG,"controlslv.getCount(): "+ncontroles);
+                    for (int i=0;i<ncontroles;i++){
+                        TextView txtV=(TextView)controlslv.getChildAt(i).findViewById(R.id.tv_item);
+                        Log.d(TAG,txtV.getText().toString());
+                    }
+                    myDB = openOrCreateDatabase("controlesDB", MODE_PRIVATE, null);
+                    c = myDB.rawQuery("SELECT * FROM controles", null);
+                    c.moveToFirst();
+                    int i=0;
+                    if (c != null && c.getCount()>0) {
+                        do {
+                            String serial=c.getString(c.getColumnIndex("serial"));
+                            //Log.d(TAG,"Control: "+serial);
+                            if (serial.equals(id)){
+                                break;
+                            }
+                            i++;
+                        }while(c.moveToNext());
+
+
+                    }
+                    myDB.close();
+                    //Log.d(TAG,"Control en posicion: "+i);
                     //Log.d(TAG,"RSSI: "+RSSI);
                     int quality=jsonObject.getInt("quality");
-                    ImageView imageView = (ImageView) controlslv.getChildAt(0).findViewById(R.id.imageViewRssi);
-
+                    ImageView imageView = (ImageView) controlslv.getChildAt(i).findViewById(R.id.imageViewRssi);
+                    int RSSI=jsonObject.getInt("rssi");
                     if (quality>75){
                         imageView.setImageResource(R.drawable.wifi4);
                     }else if (quality>50){
@@ -177,7 +243,6 @@ public class ControlsList extends AppCompatActivity {
 
                 }
             });
-            //publish();
 
 
         } catch (MqttException e) {
@@ -209,19 +274,40 @@ public class ControlsList extends AppCompatActivity {
                 HashMap<String,Object> hm = (HashMap) adapter.getItem(i);
                 RelativeLayout rLayout = (RelativeLayout) view;
                 ToggleButton tgl = (ToggleButton) rLayout.getChildAt(0);
+                TextView txtv=(TextView)rLayout.getChildAt(1);
+                Log.d(TAG,"txtv text:"+txtv.getText().toString());
                 String strStatus = "";
+                Log.d(TAG,"Leyendo serial de control....");
+                myDB = openOrCreateDatabase("controlesDB", MODE_PRIVATE, null);
+                c = myDB.rawQuery("SELECT serial FROM controles WHERE lugar='"+txtv.getText().toString()+"';", null);
+                c.moveToFirst();
+                String serial=null;
+                if (c != null && c.getCount()>0) {
+                    do {
+                        serial=c.getString(c.getColumnIndex("serial"));
+                        Log.d(TAG,"Serial leido: "+serial);
+
+                    }while(c.moveToNext());
+                }
+
+
+
+
+
+
                 if(tgl.isChecked()){
                     tgl.setChecked(false);
                     //strStatus = "Off";
                     //status[i]=false;
-                    publish(false);
+                    publish(serial,false);
                 }else{
                     tgl.setChecked(true);
                     //strStatus = "On";
                     //status[i]=true;
-                    publish(true);
+                    publish(serial,true);
                 }
                 //Toast.makeText(getBaseContext(), (String) hm.get("txt") + " : " + strStatus, Toast.LENGTH_SHORT).show();
+                myDB.close();
             }
         });
 
@@ -231,9 +317,10 @@ public class ControlsList extends AppCompatActivity {
 
     }
 
-    private void publish(boolean state) {
+    private void publish(String serial,boolean state) {
         Log.d(TAG,"Publishing....");
-        String topic = "/TRA000001X/rele";
+        //String topic = "/TRA000001X/rele";
+        String topic="/"+serial+"/rele";
         String payload = null;
         if (state){
             payload="1";
@@ -251,8 +338,9 @@ public class ControlsList extends AppCompatActivity {
         secuencia++;
     }
 
-    public void setSubscription(){
-        String topic="estado";
+    public void setSubscription(String serial){
+        String topic="/"+serial+"/"+"estado";
+        Log.d(TAG,"Setting subscription of: "+topic);
         try {
             client.subscribe(topic,0);
 
