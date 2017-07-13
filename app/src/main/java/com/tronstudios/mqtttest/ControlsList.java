@@ -82,7 +82,7 @@ public class ControlsList extends AppCompatActivity {
 //        myDB.execSQL("INSERT INTO "
 //                + "controles"
 //                + " (serial, activo, fechacreado, lugar, server, port, ultimaConexion)"
-//                + " VALUES ("+"'"+ "TRA000003X"+"'" +", '"+true+"'"+ ", "+"'"+datetime+"'"+", "+"'"+"CUARTO"+"'"+", "+"'"+"138.197.20.62"+"'"+", "+"'"+1883+"','"+datetime+"');");
+//                + " VALUES ("+"'"+ "TRA000002X"+"'" +", '"+true+"'"+ ", "+"'"+datetime+"'"+", "+"'"+"CUARTO"+"'"+", "+"'"+"138.197.20.62"+"'"+", "+"'"+1883+"','"+datetime+"');");
 
         Log.d(TAG,"Reading DB...");
         c = myDB.rawQuery("SELECT * FROM controles", null);
@@ -192,7 +192,7 @@ public class ControlsList extends AppCompatActivity {
                     String datetime= new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime());
                     myDB = openOrCreateDatabase("controlesDB", MODE_PRIVATE, null);
                     String query="update controles set ultimaConexion='"+datetime+"' where serial='"+serialIncoming+"';";
-                    Log.d(TAG,"query: "+query);
+                    //Log.d(TAG,"query: "+query);
                     myDB.execSQL(query);
 
 
@@ -392,10 +392,74 @@ public class ControlsList extends AppCompatActivity {
                             } catch (ParseException e) {
                                 e.printStackTrace();
                             }
+                            boolean online=false;
+                            if (diffHours==0 && diffMinutes==0 && diffSeconds<10){
+                                online=true;
+                            }else {
+                                online=false;
+                            }
+                            myDB = openOrCreateDatabase("controlesDB", MODE_PRIVATE, null);
+                            c = myDB.rawQuery("SELECT * FROM controles", null);
+                            c.moveToFirst();
+                            i=0;
+                            if (c != null && c.getCount()>0) {
+                                do {
+                                    String serialr=c.getString(c.getColumnIndex("serial"));
+                                    if (serialr.equals(serial)){
+                                        break;
+                                    }
+                                    i++;
+                                }while(c.moveToNext());
+
+                            }
+                            ToggleButton tglbtn = (ToggleButton) controlslv.getChildAt(i).findViewById(R.id.tgl_status);
+                            ImageView imgv=(ImageView)controlslv.getChildAt(i).findViewById(R.id.imageViewRssi);
+                            if (!online){
+                                //tglbtn.setImageResource(R.drawable.wifi3);
+
+                                tglbtn.setVisibility(View.INVISIBLE);
+                                imgv.setImageResource(R.drawable.nowifi);
+                                //tglbtn.setBackgroundDrawable(R.drawable.wifi);
+                            }else {
+                                tglbtn.setVisibility(View.VISIBLE);
+                            }
 
 
 
-                            Log.d(TAG,"id: "+id+" Serial: "+serial+" ultimaConexion: "+ultimaconexion+" diffMinutes: "+diffMinutes+" diffHours: "+diffHours+" diffSeconds: "+diffSeconds);
+                            myDB.close();
+
+                            Log.d(TAG,"id: "+id+" Serial: "+serial+" ultimaConexion: "+ultimaconexion+" diffMinutes: "+diffMinutes+" diffHours: "+diffHours+" diffSeconds: "+diffSeconds+" online: "+online);
+                            /*
+                            myDB = openOrCreateDatabase("controlesDB", MODE_PRIVATE, null);
+                            c = myDB.rawQuery("SELECT * FROM controles", null);
+                            c.moveToFirst();
+                            int i=0;
+                            if (c != null && c.getCount()>0) {
+                                do {
+                                    String serial=c.getString(c.getColumnIndex("serial"));
+                                    //Log.d(TAG,"Control: "+serial);
+                                    if (serial.equals(serialIncoming)){
+                                        break;
+                                    }
+                                    i++;
+                                }while(c.moveToNext());
+
+
+                            }
+                            myDB.close();
+                            //Log.d(TAG,"Control en posicion: "+i);
+                            //Log.d(TAG,"RSSI: "+RSSI);
+                            int quality=jsonObject.getInt("quality");
+                            ImageView imageView = (ImageView) controlslv.getChildAt(i).findViewById(R.id.imageViewRssi);
+                            int RSSI=jsonObject.getInt("rssi");
+                            if (quality>75){
+                                imageView.setImageResource(R.drawable.wifi4);
+                            }else if (quality>50){
+                                imageView.setImageResource(R.drawable.wifi3);
+                            }else if (quality>25){
+
+                            */
+
 
                         }while(c.moveToNext());
                     }
