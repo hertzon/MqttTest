@@ -107,9 +107,18 @@ public class ControlsList extends AppCompatActivity {
                 String lugar=c.getString(c.getColumnIndex("lugar"));
 
                 lugares[i]=lugar;
-
-
                 Log.d(TAG,"id: "+id+" \t "+serial+" \t "+activo+" \t "+fechacreado+" \t "+lugar);
+
+//                ToggleButton tglbtn = (ToggleButton) controlslv.getChildAt(i).findViewById(R.id.tgl_status);
+//                ImageView imgv=(ImageView)controlslv.getChildAt(i).findViewById(R.id.imageViewRssi);
+//                tglbtn.setVisibility(View.INVISIBLE);
+//                imgv.setImageResource(R.drawable.nowifi);
+
+
+
+
+
+
                 i++;
 
             }while(c.moveToNext());
@@ -117,6 +126,12 @@ public class ControlsList extends AppCompatActivity {
 
         myDB.close();
         startTimer();
+
+
+
+
+
+        //prescalerCounter=4;
 
         final String clientId = MqttClient.generateClientId();//138.197.20.62
         client =new MqttAndroidClient(this.getApplicationContext(), "tcp://138.197.20.62:1883",clientId);
@@ -139,22 +154,8 @@ public class ControlsList extends AppCompatActivity {
                             Log.d(TAG,"Subsribiendo control: "+serial);
                             setSubscription(serial);
                         }while(c.moveToNext());
-
-
                     }
-
-
-
-
-
-
-
-
-
-
-
                     myDB.close();
-
                     //setSubscription();
                 }
 
@@ -199,7 +200,8 @@ public class ControlsList extends AppCompatActivity {
                     myDB.close();
                     //Log.d(TAG,jsonObject.toString());
                     //Log.d(TAG,"id: "+jsonObject.getString("id"));
-                    Log.d(TAG,"state: "+jsonObject.getString("state"));
+                    String state=jsonObject.getString("state");
+                    Log.d(TAG,"state: "+state);
                     //Log.d(TAG,"rssi: "+jsonObject.getInt("rssi"));
                     ncontroles=controlslv.getCount();
                     //Log.d(TAG,"controlslv.getCount(): "+ncontroles);
@@ -238,10 +240,19 @@ public class ControlsList extends AppCompatActivity {
                     }else if (quality>10){
                         imageView.setImageResource(R.drawable.wifi1);
                     }
-
-
+                    ToggleButton tglBtn=(ToggleButton)controlslv.getChildAt(i).findViewById(R.id.tgl_status);
+                    if (state.equals("1")){
+                        //Log.d(TAG,"poniendo state en 1");
+                        if (!tglBtn.isChecked()){
+                            tglBtn.setChecked(true);
+                        }
+                    }else {
+                        //Log.d(TAG,"poniendo state en 0");
+                        if (tglBtn.isChecked()){
+                            tglBtn.setChecked(false);
+                        }
+                    }
                 }
-
                 @Override
                 public void deliveryComplete(IMqttDeliveryToken token) {
 
@@ -269,6 +280,10 @@ public class ControlsList extends AppCompatActivity {
 
 
 
+
+
+
+
         controlslv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> lv, View view, int i, long l) {
@@ -293,12 +308,6 @@ public class ControlsList extends AppCompatActivity {
 
                     }while(c.moveToNext());
                 }
-
-
-
-
-
-
                 if(tgl.isChecked()){
                     tgl.setChecked(false);
                     //strStatus = "Off";
@@ -316,7 +325,26 @@ public class ControlsList extends AppCompatActivity {
         });
 
 
-
+//        myDB = openOrCreateDatabase("controlesDB", MODE_PRIVATE, null);
+//        c = myDB.rawQuery("SELECT * FROM controles", null);
+//        c.moveToFirst();
+//        if (c.getCount()>0){
+//            Log.d(TAG,"Populate array");
+//        }
+//
+//        i=1;
+//        if (c != null && c.getCount()>0) {
+//            do {
+//                ToggleButton tglbtn = (ToggleButton) controlslv.getChildAt(i).findViewById(R.id.tgl_status);
+//                ImageView imgv=(ImageView)controlslv.getChildAt(i).findViewById(R.id.imageViewRssi);
+//                tglbtn.setVisibility(View.INVISIBLE);
+//                imgv.setImageResource(R.drawable.nowifi);
+//                i++;
+//
+//            }while(c.moveToNext());
+//        }
+//
+//        myDB.close();
 
 
     }
@@ -359,7 +387,7 @@ public class ControlsList extends AppCompatActivity {
                 if (++prescalerCounter>5){
                     prescalerCounter=0;
                     //Log.d(TAG,"Timer: onTick");
-                    Log.d(TAG,"Leyendo ultimos dates de conexion....");
+                    //Log.d(TAG,"Leyendo ultimos dates de conexion....");
                     String datetime= new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime());
                     SimpleDateFormat simpleDateFormat=new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                     Date dateNow;
@@ -473,7 +501,7 @@ public class ControlsList extends AppCompatActivity {
 
             }
             public void onFinish() {
-                Log.d(TAG,"Timer: onFinish");
+                //Log.d(TAG,"Timer: onFinish");
                 cTimer.start();
             }
         };

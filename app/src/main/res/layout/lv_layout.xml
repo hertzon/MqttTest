@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:background="#4F5A6B"
-    android:layout_height="60dp"
+    android:layout_height="120dp"
     android:baselineAligned="false">
 
     <ToggleButton
@@ -16,10 +16,11 @@
         android:textOn=""
         android:textOff=""
         android:clickable="false"
+        android:visibility="invisible"
         android:layout_centerVertical="true"
         android:layout_marginLeft="10dp"
-        android:layout_width="50dp"
-        android:layout_height="50dp" />
+        android:layout_width="100dp"
+        android:layout_height="100dp" />
 
     <TextView
         android:id="@+id/tv_item"
@@ -32,13 +33,13 @@
         android:layout_centerHorizontal="true" />
 
     <ImageView
-        android:src="@drawable/wifi4"
+        android:src="@drawable/nowifi"
         android:id="@+id/imageViewRssi"
 
         android:layout_alignParentRight="true"
         android:foregroundGravity="right"
         android:layout_centerInParent="true"
         android:layout_marginRight="20dp"
-        android:layout_width="15dp"
-        android:layout_height="15dp" />
+        android:layout_width="45dp"
+        android:layout_height="45dp" />
 </RelativeLayout>
