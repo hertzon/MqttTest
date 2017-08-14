@@ -33,7 +33,7 @@
         android:layout_centerHorizontal="true" />
 
     <ImageView
-        android:src="@drawable/nowifi"
+        android:src="@drawable/ic_signal_wifi_off_black_24dp"
         android:id="@+id/imageViewRssi"
 
         android:layout_alignParentRight="true"

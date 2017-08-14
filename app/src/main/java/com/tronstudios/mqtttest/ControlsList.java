@@ -6,6 +6,7 @@ import android.os.CountDownTimer;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -229,16 +230,19 @@ public class ControlsList extends AppCompatActivity {
                     //Log.d(TAG,"Control en posicion: "+i);
                     //Log.d(TAG,"RSSI: "+RSSI);
                     int quality=jsonObject.getInt("quality");
+                    Log.d(TAG,"quality: "+quality);
                     ImageView imageView = (ImageView) controlslv.getChildAt(i).findViewById(R.id.imageViewRssi);
                     int RSSI=jsonObject.getInt("rssi");
                     if (quality>75){
-                        imageView.setImageResource(R.drawable.wifi4);
+                        imageView.setImageResource(R.drawable.ic_signal_wifi_4_bar_black_64dp);
                     }else if (quality>50){
-                        imageView.setImageResource(R.drawable.wifi3);
+                        imageView.setImageResource(R.drawable.ic_signal_wifi_3_bar_black_64dp);
                     }else if (quality>25){
-                        imageView.setImageResource(R.drawable.wifi2);
+                        imageView.setImageResource(R.drawable.ic_signal_wifi_2_bar_black_64dp);
                     }else if (quality>10){
-                        imageView.setImageResource(R.drawable.wifi1);
+                        imageView.setImageResource(R.drawable.ic_signal_wifi_1_bar_black_64dp);
+                    }else if (quality<=10){
+                        imageView.setImageResource(R.drawable.ic_signal_wifi_0_bar_black_64dp);
                     }
                     ToggleButton tglBtn=(ToggleButton)controlslv.getChildAt(i).findViewById(R.id.tgl_status);
                     if (state.equals("1")){
@@ -349,7 +353,16 @@ public class ControlsList extends AppCompatActivity {
 
     }
 
-    private void publish(String serial,boolean state) {
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+
+        getMenuInflater().inflate(R.menu.menu_main,menu);
+
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    private void publish(String serial, boolean state) {
         Log.d(TAG,"Publishing control: "+serial);
         //String topic = "/TRA000001X/rele";
         String topic="/"+serial+"/rele";
@@ -446,7 +459,7 @@ public class ControlsList extends AppCompatActivity {
                                 //tglbtn.setImageResource(R.drawable.wifi3);
 
                                 tglbtn.setVisibility(View.INVISIBLE);
-                                imgv.setImageResource(R.drawable.nowifi);
+                                imgv.setImageResource(R.drawable.ic_signal_wifi_off_black_64dp);
                                 //tglbtn.setBackgroundDrawable(R.drawable.wifi);
                             }else {
                                 tglbtn.setVisibility(View.VISIBLE);
