@@ -9,13 +9,33 @@
         android:icon="@drawable/ic_add_circle_black_24dp"
         android:id="@+id/action_add"
         app:showAsAction="always"
-        android:title="asd"
+        android:title="Add Control"
         />
     <item
         android:icon="@drawable/ic_settings_black_24dp"
         android:id="@+id/settings"
         app:showAsAction="always"
-        android:title="asd"
+        android:title="Settings"
+        />
+    <item
+        android:icon="@drawable/ic_local_grocery_store_black_64dp"
+        android:id="@+id/buy"
+        app:showAsAction="always"
+        android:title="Settings"
+        />
+    <item
+
+        android:id="@+id/about"
+        android:orderInCategory="100"
+        app:showAsAction="withText"
+        android:title="Acerca de.."
+        />
+    <item
+
+        android:id="@+id/salir"
+        android:orderInCategory="100"
+        app:showAsAction="withText"
+        android:title="Salir"
         />
 
 </menu>

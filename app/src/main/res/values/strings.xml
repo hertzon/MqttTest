@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">MqttTest</string>
+    <string name="app_name">LIFI</string>
     <string name="title_activity_scan_wifi">ScanWifi</string>
 </resources>

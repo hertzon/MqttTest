@@ -1,5 +1,6 @@
 package com.tronstudios.mqtttest;
 
+import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.CountDownTimer;
@@ -7,6 +8,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -79,11 +81,15 @@ public class ControlsList extends AppCompatActivity {
         //myDB.execSQL("DROP TABLE IF EXISTS controles");//borramos tabla
         myDB.execSQL("CREATE TABLE IF NOT EXISTS "
                 + "controles"
-                + " (id INTEGER PRIMARY KEY AUTOINCREMENT, serial TEXT, activo BOOLEAN, fechacreado TEXT, lugar TEXT, server TEXT, port INTEGER, ultimaConexion TEXT);");
+                + " (id INTEGER PRIMARY KEY AUTOINCREMENT, serial TEXT, activo BOOLEAN, fechacreado TEXT, lugar TEXT, server TEXT, port INTEGER, ultimaConexion TEXT, online BOOLEAN);");
 //        myDB.execSQL("INSERT INTO "
 //                + "controles"
-//                + " (serial, activo, fechacreado, lugar, server, port, ultimaConexion)"
-//                + " VALUES ("+"'"+ "TRA000002X"+"'" +", '"+true+"'"+ ", "+"'"+datetime+"'"+", "+"'"+"CUARTO"+"'"+", "+"'"+"138.197.20.62"+"'"+", "+"'"+1883+"','"+datetime+"');");
+//                + " (serial, activo, fechacreado, lugar, server, port, ultimaConexion,online)"
+//                + " VALUES ("+"'"+ "TRA000009X"+"'" +", '"+true+"'"+ ", "+"'"+datetime+"'"+", "+"'"+"BAÑO2"+"'"+", "+"'"+"138.197.20.62"+"'"+", "+"'"+1883+"','"+datetime+"','"+false+"');");
+
+        ContentValues cv = new ContentValues();
+        cv.put("lugar","BANO");
+        myDB.update("controles", cv, "id="+6, null);
 
         Log.d(TAG,"Reading DB...");
         c = myDB.rawQuery("SELECT * FROM controles", null);
@@ -94,6 +100,7 @@ public class ControlsList extends AppCompatActivity {
         lugares=new String[c.getCount()];
         status=new Boolean[c.getCount()];
         int i=0;
+        Log.d(TAG,"id"+" \t "+"serial"+" \t "+"activo"+" \t "+"fechacreado"+" \t\t "+"lugar"+" \t"+"online");
         if (c != null && c.getCount()>0) {
             do {
                 int id=c.getInt(c.getColumnIndex("id"));
@@ -106,9 +113,10 @@ public class ControlsList extends AppCompatActivity {
                 }
                 String fechacreado=c.getString(c.getColumnIndex("fechacreado"));
                 String lugar=c.getString(c.getColumnIndex("lugar"));
+                String online=c.getString(c.getColumnIndex("online"));
 
                 lugares[i]=lugar;
-                Log.d(TAG,"id: "+id+" \t "+serial+" \t "+activo+" \t "+fechacreado+" \t "+lugar);
+                Log.d(TAG,id+" \t "+serial+" \t "+activo+" \t "+fechacreado+" \t "+lugar+" \t "+online);
 
 //                ToggleButton tglbtn = (ToggleButton) controlslv.getChildAt(i).findViewById(R.id.tgl_status);
 //                ImageView imgv=(ImageView)controlslv.getChildAt(i).findViewById(R.id.imageViewRssi);
@@ -356,10 +364,12 @@ public class ControlsList extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_main, menu);
+        //getMenuInflater().inflate(R.menu.menu_main,menu);
 
-        getMenuInflater().inflate(R.menu.menu_main,menu);
-
-        return super.onCreateOptionsMenu(menu);
+        //return super.onCreateOptionsMenu(menu);
+        return true;
     }
 
     private void publish(String serial, boolean state) {
@@ -399,110 +409,97 @@ public class ControlsList extends AppCompatActivity {
             public void onTick(long millisUntilFinished) {
                 if (++prescalerCounter>5){
                     prescalerCounter=0;
+                    Log.d(TAG,"**************************************************************************************************************************************");
+                    int startView=controlslv.getFirstVisiblePosition();
+                    int endView=controlslv.getLastVisiblePosition();
+                    Log.d(TAG,"controlslv.getCount(): "+controlslv.getCount());
+                    Log.d(TAG,"controlslv.getFirstVisiblePosition(): "+startView);
+                    Log.d(TAG,"controlslv.getLastVisiblePosition(): "+endView);
                     //Log.d(TAG,"Timer: onTick");
                     //Log.d(TAG,"Leyendo ultimos dates de conexion....");
                     String datetime= new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime());
                     SimpleDateFormat simpleDateFormat=new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                     Date dateNow;
-
-
-
                     //Log.d(TAG,"Datetime: "+datetime);
                     myDB = openOrCreateDatabase("controlesDB", MODE_PRIVATE, null);
                     c = myDB.rawQuery("SELECT * FROM controles", null);
                     c.moveToFirst();
                     int i=0;
+                    int j=0;
                     long diffMinutes=59;
                     long diffHours=24;
                     long diffSeconds=59;
                     if (c != null && c.getCount()>0) {
                         do {
-                            String id=c.getString(c.getColumnIndex("id"));
-                            String serial=c.getString(c.getColumnIndex("serial"));
-                            String ultimaconexion=c.getString(c.getColumnIndex("ultimaConexion"));
-                            diffMinutes=59;diffHours=24;
-                            try {
-                                dateNow=simpleDateFormat.parse(datetime);
-                                long diff=dateNow.getTime()-simpleDateFormat.parse(ultimaconexion).getTime();
-                                diffMinutes = diff / (60 * 1000) % 60;
-                                diffSeconds = diff / 1000 % 60;
-                                //Log.d(TAG,"diffMinutes: "+diffMinutes);
-                                diffHours = diff / (60 * 60 * 1000);
-                                //Log.d(TAG,"diffHours: "+diffHours);
+                            //if (j>=startView && j<=endView){
+                                //Log.d(TAG,"getCount(): "+c.getCount());
+                                String id=c.getString(c.getColumnIndex("id"));
+                                String serial=c.getString(c.getColumnIndex("serial"));
+                                String lugar=c.getString(c.getColumnIndex("lugar"));
+                                String ultimaconexion=c.getString(c.getColumnIndex("ultimaConexion"));
+                                //Log.d(TAG,"Lugar: "+lugar);
+                                diffMinutes=59;diffHours=24;
+                                try {
+                                    dateNow=simpleDateFormat.parse(datetime);
+                                    long diff=dateNow.getTime()-simpleDateFormat.parse(ultimaconexion).getTime();
+                                    diffMinutes = diff / (60 * 1000) % 60;
+                                    diffSeconds = diff / 1000 % 60;
+                                    //Log.d(TAG,"diffMinutes: "+diffMinutes);
+                                    diffHours = diff / (60 * 60 * 1000);
+                                    //Log.d(TAG,"diffHours: "+diffHours);
 
-                            } catch (ParseException e) {
-                                e.printStackTrace();
-                            }
-                            boolean online=false;
-                            if (diffHours==0 && diffMinutes==0 && diffSeconds<10){
-                                online=true;
-                            }else {
-                                online=false;
-                            }
-                            myDB = openOrCreateDatabase("controlesDB", MODE_PRIVATE, null);
-                            c = myDB.rawQuery("SELECT * FROM controles", null);
-                            c.moveToFirst();
-                            i=0;
-                            if (c != null && c.getCount()>0) {
-                                do {
-                                    String serialr=c.getString(c.getColumnIndex("serial"));
-                                    if (serialr.equals(serial)){
-                                        break;
-                                    }
-                                    i++;
-                                }while(c.moveToNext());
+                                } catch (ParseException e) {
+                                    e.printStackTrace();
+                                }
+                                boolean online=false;
+                                if (diffHours==0 && diffMinutes==0 && diffSeconds<10){
+                                    online=true;
+                                }else {
+                                    online=false;
+                                }
+                                ContentValues cv = new ContentValues();
+                                cv.put("online",online);
+                                myDB.update("controles", cv, "serial='"+serial+"'", null);
 
-                            }
-                            ToggleButton tglbtn = (ToggleButton) controlslv.getChildAt(i).findViewById(R.id.tgl_status);
-                            ImageView imgv=(ImageView)controlslv.getChildAt(i).findViewById(R.id.imageViewRssi);
-                            if (!online){
-                                //tglbtn.setImageResource(R.drawable.wifi3);
-
-                                tglbtn.setVisibility(View.INVISIBLE);
-                                imgv.setImageResource(R.drawable.ic_signal_wifi_off_black_64dp);
-                                //tglbtn.setBackgroundDrawable(R.drawable.wifi);
-                            }else {
-                                tglbtn.setVisibility(View.VISIBLE);
-                            }
+                                Log.d(TAG,"id: "+id+" \tLugar: "+lugar+" \tSerial: "+serial+" \tultimaConexion: "+ultimaconexion+" \tdiffMinutes: "+diffMinutes+" \tdiffHours: "+diffHours+" \tdiffSeconds: "+diffSeconds+" \tonline: "+online);
 
 
-
-                            myDB.close();
-
-                            Log.d(TAG,"id: "+id+" Serial: "+serial+" ultimaConexion: "+ultimaconexion+" diffMinutes: "+diffMinutes+" diffHours: "+diffHours+" diffSeconds: "+diffSeconds+" online: "+online);
-                            /*
-                            myDB = openOrCreateDatabase("controlesDB", MODE_PRIVATE, null);
-                            c = myDB.rawQuery("SELECT * FROM controles", null);
-                            c.moveToFirst();
-                            int i=0;
-                            if (c != null && c.getCount()>0) {
-                                do {
-                                    String serial=c.getString(c.getColumnIndex("serial"));
-                                    //Log.d(TAG,"Control: "+serial);
-                                    if (serial.equals(serialIncoming)){
-                                        break;
-                                    }
-                                    i++;
-                                }while(c.moveToNext());
-
-
-                            }
-                            myDB.close();
-                            //Log.d(TAG,"Control en posicion: "+i);
-                            //Log.d(TAG,"RSSI: "+RSSI);
-                            int quality=jsonObject.getInt("quality");
-                            ImageView imageView = (ImageView) controlslv.getChildAt(i).findViewById(R.id.imageViewRssi);
-                            int RSSI=jsonObject.getInt("rssi");
-                            if (quality>75){
-                                imageView.setImageResource(R.drawable.wifi4);
-                            }else if (quality>50){
-                                imageView.setImageResource(R.drawable.wifi3);
-                            }else if (quality>25){
-
-                            */
-
-
+//                                //myDB = openOrCreateDatabase("controlesDB", MODE_PRIVATE, null);
+//                                Cursor cc = myDB.rawQuery("SELECT * FROM controles", null);
+//                                cc.moveToFirst();
+//                                i=0;
+//                                if (cc != null && cc.getCount()>0) {
+//                                    do {
+//                                        String serialr=cc.getString(cc.getColumnIndex("serial"));
+//                                        if (serialr.equals(serial)){
+//                                            break;
+//                                        }
+//                                        i++;
+//                                    }while(cc.moveToNext());
+//
+//                                }
+//                                i=i-startView;
+//                                Log.d(TAG,"i: "+i);
+//                                if (controlslv.getChildAt(i)!=null){
+//                                    ToggleButton tglbtn = (ToggleButton) controlslv.getChildAt(i).findViewById(R.id.tgl_status);
+//                                    ImageView imgv=(ImageView)controlslv.getChildAt(i).findViewById(R.id.imageViewRssi);
+//                                    if (!online){
+//                                        //tglbtn.setImageResource(R.drawable.wifi3);
+//
+//                                        tglbtn.setVisibility(View.INVISIBLE);
+//                                        imgv.setImageResource(R.drawable.ic_signal_wifi_off_black_64dp);
+//                                        //tglbtn.setBackgroundDrawable(R.drawable.wifi);
+//                                    }else {
+//                                        tglbtn.setVisibility(View.VISIBLE);
+//                                    }
+//
+//                                }else {
+//                                    Log.d(TAG,"i null: "+i);
+//                                }
+                            //}
+                            j++;
                         }while(c.moveToNext());
+                        //Log.d(TAG,"Salio...");
                     }
 
 

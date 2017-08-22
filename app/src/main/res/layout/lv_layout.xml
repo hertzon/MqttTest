@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:background="#4F5A6B"
-    android:layout_height="120dp"
+    android:layout_height="60dp"
     android:baselineAligned="false">
 
     <ToggleButton
@@ -19,8 +19,8 @@
         android:visibility="invisible"
         android:layout_centerVertical="true"
         android:layout_marginLeft="10dp"
-        android:layout_width="100dp"
-        android:layout_height="100dp" />
+        android:layout_width="50dp"
+        android:layout_height="50dp" />
 
     <TextView
         android:id="@+id/tv_item"
@@ -40,6 +40,6 @@
         android:foregroundGravity="right"
         android:layout_centerInParent="true"
         android:layout_marginRight="20dp"
-        android:layout_width="45dp"
-        android:layout_height="45dp" />
+        android:layout_width="30dp"
+        android:layout_height="30dp" />
 </RelativeLayout>
