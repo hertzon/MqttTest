@@ -27,7 +27,7 @@
         android:layout_centerVertical="false"
         tools:context=".com.tronstudios.mqtttest.ControlsList"
         android:minHeight="191dp"
-        android:layout_height="200dp" />
+        android:layout_height="300dp" />
 
     <Button
         android:text="Salir"

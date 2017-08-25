@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.View;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -42,6 +43,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
+import static android.widget.AbsListView.OnScrollListener.SCROLL_STATE_IDLE;
+
 public class ControlsList extends AppCompatActivity {
     String[] lugares;
     Boolean[] status;
@@ -55,6 +58,7 @@ public class ControlsList extends AppCompatActivity {
     Button btn_salir;
     CountDownTimer cTimer = null;
     int prescalerCounter=0;
+    int stateScrollView=0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -122,14 +126,7 @@ public class ControlsList extends AppCompatActivity {
 //                ImageView imgv=(ImageView)controlslv.getChildAt(i).findViewById(R.id.imageViewRssi);
 //                tglbtn.setVisibility(View.INVISIBLE);
 //                imgv.setImageResource(R.drawable.nowifi);
-
-
-
-
-
-
                 i++;
-
             }while(c.moveToNext());
         }
 
@@ -171,7 +168,7 @@ public class ControlsList extends AppCompatActivity {
                 @Override
                 public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
                     // Something went wrong e.g. connection timeout or firewall problems
-                    Log.d(TAG, "onFailure");
+                    Log.d(TAG, "onFailure: Something went wrong e.g. connection timeout or firewall problems");
 
                 }
             });
@@ -186,7 +183,13 @@ public class ControlsList extends AppCompatActivity {
 
                 @Override
                 public void messageArrived(String topic, MqttMessage message) throws Exception {
+                    Log.d(TAG,"***************************************************************************");
                     Log.d(TAG,"Llego topic de: "+topic);
+                    int startView=controlslv.getFirstVisiblePosition();
+                    int endView=controlslv.getLastVisiblePosition();
+                    Log.d(TAG,"controlslv.getCount(): "+controlslv.getCount());
+                    Log.d(TAG,"controlslv.getFirstVisiblePosition(): "+startView);
+                    Log.d(TAG,"controlslv.getLastVisiblePosition(): "+endView);
                     String payload;
 
                     String serialIncoming=null;
@@ -212,16 +215,161 @@ public class ControlsList extends AppCompatActivity {
                     String state=jsonObject.getString("state");
                     Log.d(TAG,"state: "+state);
                     //Log.d(TAG,"rssi: "+jsonObject.getInt("rssi"));
-                    ncontroles=controlslv.getCount();
-                    //Log.d(TAG,"controlslv.getCount(): "+ncontroles);
-                    for (int i=0;i<ncontroles;i++){
-                        TextView txtV=(TextView)controlslv.getChildAt(i).findViewById(R.id.tv_item);
-                        //Log.d(TAG,txtV.getText().toString());
-                    }
+//                    ncontroles=controlslv.getCount();
+//                    //Log.d(TAG,"controlslv.getCount(): "+ncontroles);
+//                    for (int i=0;i<ncontroles;i++){
+//                        TextView txtV=(TextView)controlslv.getChildAt(i).findViewById(R.id.tv_item);
+//                        //Log.d(TAG,txtV.getText().toString());
+//                    }
+                    Log.d(TAG,"Configurando estados de rows.....");
+                    datetime= new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime());
+                    SimpleDateFormat simpleDateFormat=new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                    Date dateNow;
+                    //Log.d(TAG,"Datetime: "+datetime);
                     myDB = openOrCreateDatabase("controlesDB", MODE_PRIVATE, null);
                     c = myDB.rawQuery("SELECT * FROM controles", null);
                     c.moveToFirst();
                     int i=0;
+                    int j=0;
+                    long diffMinutes=59;
+                    long diffHours=24;
+                    long diffSeconds=59;
+                    if (c != null && c.getCount()>0) {
+                        do {
+                            //if (j>=startView && j<=endView){
+                            //Log.d(TAG,"getCount(): "+c.getCount());
+                            String id=c.getString(c.getColumnIndex("id"));
+                            String serial=c.getString(c.getColumnIndex("serial"));
+                            String lugar=c.getString(c.getColumnIndex("lugar"));
+                            String ultimaconexion=c.getString(c.getColumnIndex("ultimaConexion"));
+                            //Log.d(TAG,"Lugar: "+lugar);
+                            diffMinutes=59;diffHours=24;
+                            try {
+                                dateNow=simpleDateFormat.parse(datetime);
+                                long diff=dateNow.getTime()-simpleDateFormat.parse(ultimaconexion).getTime();
+                                diffMinutes = diff / (60 * 1000) % 60;
+                                diffSeconds = diff / 1000 % 60;
+                                //Log.d(TAG,"diffMinutes: "+diffMinutes);
+                                diffHours = diff / (60 * 60 * 1000);
+                                //Log.d(TAG,"diffHours: "+diffHours);
+
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
+                            boolean online=false;
+                            if (diffHours==0 && diffMinutes==0 && diffSeconds<10){
+                                online=true;
+                            }else {
+                                online=false;
+                            }
+                            ContentValues cv = new ContentValues();
+                            cv.put("online",online);
+                            myDB.update("controles", cv, "serial='"+serial+"'", null);
+
+                            //Log.d(TAG,"id: "+id+" \tLugar: "+lugar+" \tSerial: "+serial+" \tultimaConexion: "+ultimaconexion+" \tdiffMinutes: "+diffMinutes+" \t\tdiffHours: "+diffHours+" \tdiffSeconds: "+diffSeconds+" \tonline: "+online);
+//                            j=i-startView;
+//                            if (i>=startView && i<=endView){
+//                                if (controlslv.getChildAt(j)!=null){
+//                                    ImageView imgv=(ImageView)controlslv.getChildAt(j).findViewById(R.id.imageViewRssi);
+//                                    ToggleButton tglbtn = (ToggleButton) controlslv.getChildAt(j).findViewById(R.id.tgl_status);
+//                                    if (online){
+//
+//                                        tglbtn.setVisibility(View.VISIBLE);
+//                                    }else {
+//                                        //Log.d(TAG,"off: "+serial);
+//                                        tglbtn.setVisibility(View.INVISIBLE);
+//                                        imgv.setImageResource(R.drawable.ic_signal_wifi_off_black_64dp);
+//                                    }
+//                                }
+//                            }
+
+//                                //myDB = openOrCreateDatabase("controlesDB", MODE_PRIVATE, null);
+//                                Cursor cc = myDB.rawQuery("SELECT * FROM controles", null);
+//                                cc.moveToFirst();
+//                                i=0;
+//                                if (cc != null && cc.getCount()>0) {
+//                                    do {
+//                                        String serialr=cc.getString(cc.getColumnIndex("serial"));
+//                                        if (serialr.equals(serial)){
+//                                            break;
+//                                        }
+//                                        i++;
+//                                    }while(cc.moveToNext());
+//
+//                                }
+//                                i=i-startView;
+//                                Log.d(TAG,"i: "+i);
+//                                if (controlslv.getChildAt(i)!=null){
+//                                    ToggleButton tglbtn = (ToggleButton) controlslv.getChildAt(i).findViewById(R.id.tgl_status);
+//                                    ImageView imgv=(ImageView)controlslv.getChildAt(i).findViewById(R.id.imageViewRssi);
+//                                    if (!online){
+//                                        //tglbtn.setImageResource(R.drawable.wifi3);
+//
+//                                        tglbtn.setVisibility(View.INVISIBLE);
+//                                        imgv.setImageResource(R.drawable.ic_signal_wifi_off_black_64dp);
+//                                        //tglbtn.setBackgroundDrawable(R.drawable.wifi);
+//                                    }else {
+//                                        tglbtn.setVisibility(View.VISIBLE);
+//                                    }
+//
+//                                }else {
+//                                    Log.d(TAG,"i null: "+i);
+//                                }
+                            //}
+                            i++;
+                        }while(c.moveToNext());
+                        //Log.d(TAG,"Salio...");
+//                        startView=controlslv.getFirstVisiblePosition();
+//                        endView=controlslv.getLastVisiblePosition();
+//                        Log.d(TAG,"controlslv.getCount(): "+controlslv.getCount());
+//                        Log.d(TAG,"controlslv.getFirstVisiblePosition(): "+startView);
+//                        Log.d(TAG,"controlslv.getLastVisiblePosition(): "+endView);
+//                        c = myDB.rawQuery("SELECT * FROM controles", null);
+//                        c.moveToFirst();
+//                        i=0;
+//                        if (c != null && c.getCount()>0) {
+//
+//                            do {
+//                                if (i>=startView && i<=endView){
+//                                    String online=c.getString(c.getColumnIndex("online"));
+//                                    Log.d(TAG,"i: "+i+" online: "+online);
+//                                    if (controlslv.getChildAt(i)!=null){
+//                                        ImageView imgv=(ImageView)controlslv.getChildAt(i).findViewById(R.id.imageViewRssi);
+//                                        ToggleButton tglbtn = (ToggleButton) controlslv.getChildAt(i).findViewById(R.id.tgl_status);
+//                                        if (online.equals("0")){
+//                                            //tglbtn.setImageResource(R.drawable.wifi3);
+//
+//                                            tglbtn.setVisibility(View.INVISIBLE);
+//                                            imgv.setImageResource(R.drawable.ic_signal_wifi_off_black_64dp);
+//                                            //tglbtn.setBackgroundDrawable(R.drawable.wifi);
+//                                        }else {
+//                                            tglbtn.setVisibility(View.VISIBLE);
+//                                        }
+//                                    }
+//
+//                                }
+//
+//
+//
+//
+//                                i++;
+//                            }while(c.moveToNext());
+//
+//
+//                        }
+
+
+
+
+                    }
+
+
+
+                    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    myDB = openOrCreateDatabase("controlesDB", MODE_PRIVATE, null);
+                    c = myDB.rawQuery("SELECT * FROM controles", null);
+                    c.moveToFirst();
+                    i=0;
                     if (c != null && c.getCount()>0) {
                         do {
                             String serial=c.getString(c.getColumnIndex("serial"));
@@ -235,35 +383,41 @@ public class ControlsList extends AppCompatActivity {
 
                     }
                     myDB.close();
-                    //Log.d(TAG,"Control en posicion: "+i);
-                    //Log.d(TAG,"RSSI: "+RSSI);
-                    int quality=jsonObject.getInt("quality");
-                    Log.d(TAG,"quality: "+quality);
-                    ImageView imageView = (ImageView) controlslv.getChildAt(i).findViewById(R.id.imageViewRssi);
-                    int RSSI=jsonObject.getInt("rssi");
-                    if (quality>75){
-                        imageView.setImageResource(R.drawable.ic_signal_wifi_4_bar_black_64dp);
-                    }else if (quality>50){
-                        imageView.setImageResource(R.drawable.ic_signal_wifi_3_bar_black_64dp);
-                    }else if (quality>25){
-                        imageView.setImageResource(R.drawable.ic_signal_wifi_2_bar_black_64dp);
-                    }else if (quality>10){
-                        imageView.setImageResource(R.drawable.ic_signal_wifi_1_bar_black_64dp);
-                    }else if (quality<=10){
-                        imageView.setImageResource(R.drawable.ic_signal_wifi_0_bar_black_64dp);
-                    }
-                    ToggleButton tglBtn=(ToggleButton)controlslv.getChildAt(i).findViewById(R.id.tgl_status);
-                    if (state.equals("1")){
-                        //Log.d(TAG,"poniendo state en 1");
-                        if (!tglBtn.isChecked()){
-                            tglBtn.setChecked(true);
+                    if (i>=startView && i<=endView){
+                        Log.d(TAG,"Control en posicion: "+i);
+
+                        //Log.d(TAG,"RSSI: "+RSSI);
+                        int quality=jsonObject.getInt("quality");
+                        Log.d(TAG,"quality: "+quality);
+                        ImageView imageView = (ImageView) controlslv.getChildAt(i).findViewById(R.id.imageViewRssi);
+                        int RSSI=jsonObject.getInt("rssi");
+                        if (quality>75){
+                            imageView.setImageResource(R.drawable.ic_signal_wifi_4_bar_black_64dp);
+                        }else if (quality>50){
+                            imageView.setImageResource(R.drawable.ic_signal_wifi_3_bar_black_64dp);
+                        }else if (quality>25){
+                            imageView.setImageResource(R.drawable.ic_signal_wifi_2_bar_black_64dp);
+                        }else if (quality>10){
+                            imageView.setImageResource(R.drawable.ic_signal_wifi_1_bar_black_64dp);
+                        }else if (quality<=10){
+                            imageView.setImageResource(R.drawable.ic_signal_wifi_0_bar_black_64dp);
                         }
-                    }else {
-                        //Log.d(TAG,"poniendo state en 0");
-                        if (tglBtn.isChecked()){
-                            tglBtn.setChecked(false);
+                        ToggleButton tglBtn=(ToggleButton)controlslv.getChildAt(i).findViewById(R.id.tgl_status);
+                        if (state.equals("1")){
+                            //Log.d(TAG,"poniendo state en 1");
+                            if (!tglBtn.isChecked()){
+                                tglBtn.setChecked(true);
+                            }
+                        }else {
+                            //Log.d(TAG,"poniendo state en 0");
+                            if (tglBtn.isChecked()){
+                                tglBtn.setChecked(false);
+                            }
                         }
                     }
+
+
+
                 }
                 @Override
                 public void deliveryComplete(IMqttDeliveryToken token) {
@@ -336,6 +490,67 @@ public class ControlsList extends AppCompatActivity {
             }
         });
 
+        controlslv.setOnScrollListener(new AbsListView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView absListView, int i) {
+                stateScrollView=i;
+                Log.d(TAG,"onScrollStateChanged: "+i);
+                //int startView=controlslv.getFirstVisiblePosition();
+                //int endView=controlslv.getLastVisiblePosition();
+                //Log.d(TAG,"controlslv.getCount(): "+controlslv.getCount());
+                //Log.d(TAG,"controlslv.getFirstVisiblePosition(): "+startView);
+                //Log.d(TAG,"controlslv.getLastVisiblePosition(): "+endView);
+                if (i==SCROLL_STATE_FLING){
+                    Log.d(TAG,"SCROLL_STATE_FLING");
+                }else if (i==SCROLL_STATE_IDLE){
+                    Log.d(TAG,"SCROLL_STATE_IDLE");
+                }else if (i==SCROLL_STATE_TOUCH_SCROLL) {
+                    Log.d(TAG,"SCROLL_STATE_TOUCH_SCROLL");
+                }
+            }
+
+            @Override
+            public void onScroll(AbsListView absListView, int i, int i1, int i2) {
+                Log.d(TAG,"onScroll: "+i+","+i1+","+i2);
+                int startView=controlslv.getFirstVisiblePosition();
+                int endView=controlslv.getLastVisiblePosition();
+                Log.d(TAG,"controlslv.getCount(): "+controlslv.getCount());
+                Log.d(TAG,"controlslv.getFirstVisiblePosition(): "+startView);
+                Log.d(TAG,"controlslv.getLastVisiblePosition(): "+endView);
+                myDB = openOrCreateDatabase("controlesDB", MODE_PRIVATE, null);
+                c = myDB.rawQuery("SELECT * FROM controles", null);
+                c.moveToFirst();
+                i=0;
+                int j=0;
+                if (c != null && c.getCount()>0) {
+                    do {
+                        j=i-startView;
+                        if (i>=startView && i<=endView){
+                            String online=c.getString(c.getColumnIndex("online"));
+                            //Log.d(TAG,"i: "+i+" online: "+online);
+                            if (controlslv.getChildAt(j)!=null){
+                                ImageView imgv=(ImageView)controlslv.getChildAt(j).findViewById(R.id.imageViewRssi);
+                                ToggleButton tglbtn = (ToggleButton) controlslv.getChildAt(j).findViewById(R.id.tgl_status);
+                                if (online.equals("0")){
+                                    //tglbtn.setImageResource(R.drawable.wifi3);
+
+                                    tglbtn.setVisibility(View.INVISIBLE);
+                                    imgv.setImageResource(R.drawable.ic_signal_wifi_off_black_64dp);
+                                    //tglbtn.setBackgroundDrawable(R.drawable.wifi);
+                                }else {
+                                    tglbtn.setVisibility(View.VISIBLE);
+                                }
+                            }
+
+                        }
+                        i++;
+                    }while(c.moveToNext());
+                }
+                myDB.close();
+
+            }
+        });
+
 
 //        myDB = openOrCreateDatabase("controlesDB", MODE_PRIVATE, null);
 //        c = myDB.rawQuery("SELECT * FROM controles", null);
@@ -361,6 +576,16 @@ public class ControlsList extends AppCompatActivity {
 
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(TAG,"OnResume...");
+        if (cTimer!=null){
+            cTimer.cancel();
+        }
+
+        startTimer();
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -407,14 +632,11 @@ public class ControlsList extends AppCompatActivity {
     void startTimer() {
         cTimer = new CountDownTimer(30000, 1000) {
             public void onTick(long millisUntilFinished) {
-                if (++prescalerCounter>5){
+                if (++prescalerCounter>5 && stateScrollView==SCROLL_STATE_IDLE){
+
                     prescalerCounter=0;
                     Log.d(TAG,"**************************************************************************************************************************************");
-                    int startView=controlslv.getFirstVisiblePosition();
-                    int endView=controlslv.getLastVisiblePosition();
-                    Log.d(TAG,"controlslv.getCount(): "+controlslv.getCount());
-                    Log.d(TAG,"controlslv.getFirstVisiblePosition(): "+startView);
-                    Log.d(TAG,"controlslv.getLastVisiblePosition(): "+endView);
+                    Log.d(TAG,"Timer....");
                     //Log.d(TAG,"Timer: onTick");
                     //Log.d(TAG,"Leyendo ultimos dates de conexion....");
                     String datetime= new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime());
@@ -461,7 +683,7 @@ public class ControlsList extends AppCompatActivity {
                                 cv.put("online",online);
                                 myDB.update("controles", cv, "serial='"+serial+"'", null);
 
-                                Log.d(TAG,"id: "+id+" \tLugar: "+lugar+" \tSerial: "+serial+" \tultimaConexion: "+ultimaconexion+" \tdiffMinutes: "+diffMinutes+" \tdiffHours: "+diffHours+" \tdiffSeconds: "+diffSeconds+" \tonline: "+online);
+                                Log.d(TAG,"id: "+id+" \tLugar: "+lugar+" \tSerial: "+serial+" \tultimaConexion: "+ultimaconexion+" \tdiffMinutes: "+diffMinutes+" \t\tdiffHours: "+diffHours+" \tdiffSeconds: "+diffSeconds+" \tonline: "+online);
 
 
 //                                //myDB = openOrCreateDatabase("controlesDB", MODE_PRIVATE, null);
@@ -500,15 +722,40 @@ public class ControlsList extends AppCompatActivity {
                             j++;
                         }while(c.moveToNext());
                         //Log.d(TAG,"Salio...");
+                        int startView=controlslv.getFirstVisiblePosition();
+                        int endView=controlslv.getLastVisiblePosition();
+                        Log.d(TAG,"controlslv.getCount(): "+controlslv.getCount());
+                        Log.d(TAG,"controlslv.getFirstVisiblePosition(): "+startView);
+                        Log.d(TAG,"controlslv.getLastVisiblePosition(): "+endView);
+                        c = myDB.rawQuery("SELECT * FROM controles", null);
+                        c.moveToFirst();
+                        i=0;
+                        if (c != null && c.getCount()>0) {
+                            do {
+                                j=i-startView;
+                                if (i>=startView && i<=endView){
+                                    String online=c.getString(c.getColumnIndex("online"));
+                                    //Log.d(TAG,"i: "+i+" online: "+online);
+                                    if (controlslv.getChildAt(j)!=null){
+                                        ImageView imgv=(ImageView)controlslv.getChildAt(j).findViewById(R.id.imageViewRssi);
+                                        ToggleButton tglbtn = (ToggleButton) controlslv.getChildAt(j).findViewById(R.id.tgl_status);
+                                        if (online.equals("0")){
+                                            //tglbtn.setImageResource(R.drawable.wifi3);
+
+                                            tglbtn.setVisibility(View.INVISIBLE);
+                                            imgv.setImageResource(R.drawable.ic_signal_wifi_off_black_64dp);
+                                            //tglbtn.setBackgroundDrawable(R.drawable.wifi);
+                                        }else {
+                                            tglbtn.setVisibility(View.VISIBLE);
+                                        }
+                                    }
+                                }
+                                i++;
+                            }while(c.moveToNext());
+                        }
                     }
-
-
-
-
                     myDB.close();
                 }
-
-
             }
             public void onFinish() {
                 //Log.d(TAG,"Timer: onFinish");
