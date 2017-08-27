@@ -14,7 +14,6 @@ import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.SimpleAdapter;
@@ -28,6 +27,7 @@ import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.IMqttToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.json.JSONObject;
@@ -85,15 +85,15 @@ public class ControlsList extends AppCompatActivity {
         //myDB.execSQL("DROP TABLE IF EXISTS controles");//borramos tabla
         myDB.execSQL("CREATE TABLE IF NOT EXISTS "
                 + "controles"
-                + " (id INTEGER PRIMARY KEY AUTOINCREMENT, serial TEXT, activo BOOLEAN, fechacreado TEXT, lugar TEXT, server TEXT, port INTEGER, ultimaConexion TEXT, online BOOLEAN);");
+                + " (id INTEGER PRIMARY KEY AUTOINCREMENT, serial TEXT, activo BOOLEAN, fechacreado TEXT, lugar TEXT, server TEXT, port INTEGER, ultimaConexion TEXT, online BOOLEAN, signal INTEGER, state BOOLEAN);");
 //        myDB.execSQL("INSERT INTO "
 //                + "controles"
 //                + " (serial, activo, fechacreado, lugar, server, port, ultimaConexion,online)"
-//                + " VALUES ("+"'"+ "TRA000009X"+"'" +", '"+true+"'"+ ", "+"'"+datetime+"'"+", "+"'"+"BAÑO2"+"'"+", "+"'"+"138.197.20.62"+"'"+", "+"'"+1883+"','"+datetime+"','"+false+"');");
+//                + " VALUES ("+"'"+ "TRA000009X"+"'" +", '"+true+"'"+ ", "+"'"+datetime+"'"+", "+"'"+"COCINA"+"'"+", "+"'"+"138.197.20.62"+"'"+", "+"'"+1883+"','"+datetime+"','"+false+"');");
 
-        ContentValues cv = new ContentValues();
-        cv.put("lugar","BANO");
-        myDB.update("controles", cv, "id="+6, null);
+//        ContentValues cv = new ContentValues();
+//        cv.put("lugar","BANO");
+//        myDB.update("controles", cv, "id="+6, null);
 
         Log.d(TAG,"Reading DB...");
         c = myDB.rawQuery("SELECT * FROM controles", null);
@@ -138,12 +138,14 @@ public class ControlsList extends AppCompatActivity {
 
 
         //prescalerCounter=4;
-
+        MqttConnectOptions options = new MqttConnectOptions();
+        options.setUserName("nelson");
+        options.setPassword("!irfz44n".toCharArray());
         final String clientId = MqttClient.generateClientId();//138.197.20.62
         client =new MqttAndroidClient(this.getApplicationContext(), "tcp://138.197.20.62:1883",clientId);
         Log.d(TAG,"clientId: "+clientId);
         try {
-            IMqttToken token = client.connect();
+            IMqttToken token = client.connect(options);
             token.setActionCallback(new IMqttActionListener() {
                 @Override
                 public void onSuccess(IMqttToken asyncActionToken) {
@@ -168,6 +170,7 @@ public class ControlsList extends AppCompatActivity {
                 @Override
                 public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
                     // Something went wrong e.g. connection timeout or firewall problems
+                    Toast.makeText(getApplicationContext(),"Problema conectando a servidor!!!",Toast.LENGTH_LONG).show();
                     Log.d(TAG, "onFailure: Something went wrong e.g. connection timeout or firewall problems");
 
                 }
@@ -201,19 +204,36 @@ public class ControlsList extends AppCompatActivity {
 
 
                     Log.d(TAG,"serialIncoming: "+serialIncoming);
+                    boolean estado=false;
+                    String state=jsonObject.getString("state");
+                    if (state.equals("1")){
+                        estado=true;
+                    }else {
+                        estado=false;
+                    }
+                    int quality=jsonObject.getInt("quality");
+                    Log.d(TAG,"state: "+state);
                     Log.d(TAG,"Guardando time de arrivo...");
                     String datetime= new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime());
                     myDB = openOrCreateDatabase("controlesDB", MODE_PRIVATE, null);
-                    String query="update controles set ultimaConexion='"+datetime+"' where serial='"+serialIncoming+"';";
-                    //Log.d(TAG,"query: "+query);
-                    myDB.execSQL(query);
 
 
+
+//                    String[] columns=c.getColumnNames();
+//                    for (int i=0;i<columns.length;i++){
+//                        Log.d(TAG,columns[i]);
+//                    }
+
+
+                    ContentValues data=new ContentValues();
+                    data.put("ultimaConexion",datetime);
+                    data.put("signal",quality);
+                    data.put("state",estado);
+                    myDB.update("controles",data,"serial='"+serialIncoming+"'",null);
                     myDB.close();
                     //Log.d(TAG,jsonObject.toString());
                     //Log.d(TAG,"id: "+jsonObject.getString("id"));
-                    String state=jsonObject.getString("state");
-                    Log.d(TAG,"state: "+state);
+
                     //Log.d(TAG,"rssi: "+jsonObject.getInt("rssi"));
 //                    ncontroles=controlslv.getCount();
 //                    //Log.d(TAG,"controlslv.getCount(): "+ncontroles);
@@ -265,102 +285,8 @@ public class ControlsList extends AppCompatActivity {
                             ContentValues cv = new ContentValues();
                             cv.put("online",online);
                             myDB.update("controles", cv, "serial='"+serial+"'", null);
-
-                            //Log.d(TAG,"id: "+id+" \tLugar: "+lugar+" \tSerial: "+serial+" \tultimaConexion: "+ultimaconexion+" \tdiffMinutes: "+diffMinutes+" \t\tdiffHours: "+diffHours+" \tdiffSeconds: "+diffSeconds+" \tonline: "+online);
-//                            j=i-startView;
-//                            if (i>=startView && i<=endView){
-//                                if (controlslv.getChildAt(j)!=null){
-//                                    ImageView imgv=(ImageView)controlslv.getChildAt(j).findViewById(R.id.imageViewRssi);
-//                                    ToggleButton tglbtn = (ToggleButton) controlslv.getChildAt(j).findViewById(R.id.tgl_status);
-//                                    if (online){
-//
-//                                        tglbtn.setVisibility(View.VISIBLE);
-//                                    }else {
-//                                        //Log.d(TAG,"off: "+serial);
-//                                        tglbtn.setVisibility(View.INVISIBLE);
-//                                        imgv.setImageResource(R.drawable.ic_signal_wifi_off_black_64dp);
-//                                    }
-//                                }
-//                            }
-
-//                                //myDB = openOrCreateDatabase("controlesDB", MODE_PRIVATE, null);
-//                                Cursor cc = myDB.rawQuery("SELECT * FROM controles", null);
-//                                cc.moveToFirst();
-//                                i=0;
-//                                if (cc != null && cc.getCount()>0) {
-//                                    do {
-//                                        String serialr=cc.getString(cc.getColumnIndex("serial"));
-//                                        if (serialr.equals(serial)){
-//                                            break;
-//                                        }
-//                                        i++;
-//                                    }while(cc.moveToNext());
-//
-//                                }
-//                                i=i-startView;
-//                                Log.d(TAG,"i: "+i);
-//                                if (controlslv.getChildAt(i)!=null){
-//                                    ToggleButton tglbtn = (ToggleButton) controlslv.getChildAt(i).findViewById(R.id.tgl_status);
-//                                    ImageView imgv=(ImageView)controlslv.getChildAt(i).findViewById(R.id.imageViewRssi);
-//                                    if (!online){
-//                                        //tglbtn.setImageResource(R.drawable.wifi3);
-//
-//                                        tglbtn.setVisibility(View.INVISIBLE);
-//                                        imgv.setImageResource(R.drawable.ic_signal_wifi_off_black_64dp);
-//                                        //tglbtn.setBackgroundDrawable(R.drawable.wifi);
-//                                    }else {
-//                                        tglbtn.setVisibility(View.VISIBLE);
-//                                    }
-//
-//                                }else {
-//                                    Log.d(TAG,"i null: "+i);
-//                                }
-                            //}
                             i++;
                         }while(c.moveToNext());
-                        //Log.d(TAG,"Salio...");
-//                        startView=controlslv.getFirstVisiblePosition();
-//                        endView=controlslv.getLastVisiblePosition();
-//                        Log.d(TAG,"controlslv.getCount(): "+controlslv.getCount());
-//                        Log.d(TAG,"controlslv.getFirstVisiblePosition(): "+startView);
-//                        Log.d(TAG,"controlslv.getLastVisiblePosition(): "+endView);
-//                        c = myDB.rawQuery("SELECT * FROM controles", null);
-//                        c.moveToFirst();
-//                        i=0;
-//                        if (c != null && c.getCount()>0) {
-//
-//                            do {
-//                                if (i>=startView && i<=endView){
-//                                    String online=c.getString(c.getColumnIndex("online"));
-//                                    Log.d(TAG,"i: "+i+" online: "+online);
-//                                    if (controlslv.getChildAt(i)!=null){
-//                                        ImageView imgv=(ImageView)controlslv.getChildAt(i).findViewById(R.id.imageViewRssi);
-//                                        ToggleButton tglbtn = (ToggleButton) controlslv.getChildAt(i).findViewById(R.id.tgl_status);
-//                                        if (online.equals("0")){
-//                                            //tglbtn.setImageResource(R.drawable.wifi3);
-//
-//                                            tglbtn.setVisibility(View.INVISIBLE);
-//                                            imgv.setImageResource(R.drawable.ic_signal_wifi_off_black_64dp);
-//                                            //tglbtn.setBackgroundDrawable(R.drawable.wifi);
-//                                        }else {
-//                                            tglbtn.setVisibility(View.VISIBLE);
-//                                        }
-//                                    }
-//
-//                                }
-//
-//
-//
-//
-//                                i++;
-//                            }while(c.moveToNext());
-//
-//
-//                        }
-
-
-
-
                     }
 
 
@@ -383,11 +309,12 @@ public class ControlsList extends AppCompatActivity {
 
                     }
                     myDB.close();
+                    Log.d(TAG,"I row: "+i);
                     if (i>=startView && i<=endView){
                         Log.d(TAG,"Control en posicion: "+i);
 
                         //Log.d(TAG,"RSSI: "+RSSI);
-                        int quality=jsonObject.getInt("quality");
+
                         Log.d(TAG,"quality: "+quality);
                         ImageView imageView = (ImageView) controlslv.getChildAt(i).findViewById(R.id.imageViewRssi);
                         int RSSI=jsonObject.getInt("rssi");
@@ -527,6 +454,7 @@ public class ControlsList extends AppCompatActivity {
                         j=i-startView;
                         if (i>=startView && i<=endView){
                             String online=c.getString(c.getColumnIndex("online"));
+                            int quality=c.getInt(c.getColumnIndex("signal"));
                             //Log.d(TAG,"i: "+i+" online: "+online);
                             if (controlslv.getChildAt(j)!=null){
                                 ImageView imgv=(ImageView)controlslv.getChildAt(j).findViewById(R.id.imageViewRssi);
@@ -539,7 +467,20 @@ public class ControlsList extends AppCompatActivity {
                                     //tglbtn.setBackgroundDrawable(R.drawable.wifi);
                                 }else {
                                     tglbtn.setVisibility(View.VISIBLE);
+                                    ImageView imageView = (ImageView) controlslv.getChildAt(j).findViewById(R.id.imageViewRssi);
+                                    if (quality>75){
+                                        imageView.setImageResource(R.drawable.ic_signal_wifi_4_bar_black_64dp);
+                                    }else if (quality>50){
+                                        imageView.setImageResource(R.drawable.ic_signal_wifi_3_bar_black_64dp);
+                                    }else if (quality>25){
+                                        imageView.setImageResource(R.drawable.ic_signal_wifi_2_bar_black_64dp);
+                                    }else if (quality>10){
+                                        imageView.setImageResource(R.drawable.ic_signal_wifi_1_bar_black_64dp);
+                                    }else if (quality<=10){
+                                        imageView.setImageResource(R.drawable.ic_signal_wifi_0_bar_black_64dp);
+                                    }
                                 }
+
                             }
 
                         }
